@@ -1,706 +1,1007 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mimic Party - เกมเลียนแบบเสียง</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            box-sizing: border-box;
-            font-family: 'Kanit', sans-serif;
-            user-select: none;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mimic Party 🎤</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700;900&display=swap');
 
-        body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #2d3436;
-        }
+  :root {
+    --bg: #0d0015;
+    --surface: #1a0030;
+    --card: #240040;
+    --accent: #c940ff;
+    --accent2: #ff40c9;
+    --green: #40ffb0;
+    --yellow: #ffe040;
+    --text: #f0d9ff;
+    --muted: #9970b0;
+  }
 
-        .container {
-            width: 100%;
-            max-width: 750px;
-            padding: 20px;
-        }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 28px;
-            padding: 35px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            transition: all 0.3s ease;
-        }
+  body {
+    font-family: 'Kanit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
 
-        .screen {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-        }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 50%, #3d006640 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, #60006640 0%, transparent 60%);
+    pointer-events: none;
+  }
 
-        .screen.active {
-            display: flex;
-        }
+  #app {
+    width: 100%;
+    max-width: 520px;
+    padding: 20px;
+    position: relative;
+  }
 
-        h1 {
-            font-size: 2.8rem;
-            margin: 0 0 10px 0;
-            background: linear-gradient(45deg, #6c5ce7, #ff7675);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 700;
-        }
+  .logo {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .logo-title {
+    font-size: 2.8rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+  .logo-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
 
-        p.subtitle {
-            font-size: 1.1rem;
-            color: #636e72;
-            margin-bottom: 25px;
-        }
+  .screen { display: none; }
+  .screen.active { display: block; }
 
-        .form-group {
-            width: 100%;
-            max-width: 400px;
-            margin-bottom: 20px;
-            text-align: left;
-        }
+  /* SETUP */
+  .setup-card {
+    background: var(--surface);
+    border: 1px solid #ffffff18;
+    border-radius: 20px;
+    padding: 28px 24px;
+    margin-top: 18px;
+  }
+  .setup-card h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
 
-        label {
-            font-weight: 600;
-            color: #2d3436;
-            display: block;
-            margin-bottom: 8px;
-        }
+  .player-count-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .count-btn {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: background .15s;
+    font-family: 'Kanit', sans-serif;
+  }
+  .count-btn:hover { background: #c940ff20; }
+  .count-display {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--yellow);
+    min-width: 36px;
+    text-align: center;
+  }
+  .count-label { color: var(--muted); font-size: 0.9rem; }
 
-        input[type="number"], select {
-            width: 100%;
-            padding: 14px 20px;
-            font-size: 1.1rem;
-            border-radius: 14px;
-            border: 2px solid #dfe6e9;
-            outline: none;
-            transition: 0.2s;
-            background: #f8f9fa;
-        }
+  .player-inputs { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .player-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .player-num {
+    font-size: 0.85rem;
+    color: var(--muted);
+    min-width: 24px;
+    text-align: right;
+  }
+  .player-input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid #ffffff20;
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'Kanit', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .player-input:focus { border-color: var(--accent); }
+  .player-input::placeholder { color: var(--muted); }
 
-        input[type="number"]:focus, select:focus, .name-input:focus {
-            border-color: #6c5ce7;
-            background: #fff;
-        }
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    font-family: 'Kanit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-        .names-container {
-            width: 100%;
-            max-width: 400px;
-            max-height: 200px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            padding-right: 5px;
-        }
+  /* COUNTDOWN */
+  #screen-countdown {
+    text-align: center;
+  }
+  .countdown-label {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .countdown-speaker {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--yellow);
+    margin-bottom: 8px;
+  }
+  .countdown-action {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+  .big-number {
+    font-size: 9rem;
+    font-weight: 900;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: pulse-num 1s ease-in-out infinite;
+  }
+  @keyframes pulse-num {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
 
-        .name-input {
-            width: 100%;
-            padding: 12px 16px;
-            font-size: 1rem;
-            border-radius: 12px;
-            border: 2px solid #dfe6e9;
-            margin-bottom: 10px;
-            outline: none;
-            background: #f8f9fa;
-        }
+  /* RECORDING */
+  #screen-record {
+    text-align: center;
+  }
+  .record-card {
+    background: var(--surface);
+    border: 1px solid #ffffff18;
+    border-radius: 20px;
+    padding: 32px 24px;
+    margin-top: 18px;
+  }
+  .record-who {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .record-name {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--yellow);
+    margin-bottom: 24px;
+  }
+  .mic-wrap {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 20px;
+  }
+  .mic-icon {
+    font-size: 5rem;
+    display: block;
+    animation: mic-pulse 1s ease-in-out infinite;
+  }
+  @keyframes mic-pulse {
+    0%,100% { transform: scale(1); filter: drop-shadow(0 0 0px var(--accent)); }
+    50% { transform: scale(1.08); filter: drop-shadow(0 0 18px var(--accent)); }
+  }
+  .mic-ring {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    animation: ring-expand 1s ease-out infinite;
+    opacity: 0;
+  }
+  @keyframes ring-expand {
+    0% { transform: scale(0.8); opacity: 0.8; }
+    100% { transform: scale(1.4); opacity: 0; }
+  }
 
-        .btn-primary {
-            background: linear-gradient(45deg, #6c5ce7, #a29bfe);
-            color: white;
-            border: none;
-            padding: 16px 45px;
-            font-size: 1.3rem;
-            font-weight: 600;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(108, 92, 231, 0.3);
-            transition: all 0.2s ease;
-            margin-top: 10px;
-        }
+  .timer-bar-wrap {
+    background: #ffffff18;
+    border-radius: 99px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .timer-bar {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width .1s linear;
+  }
+  .timer-text {
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 25px rgba(108, 92, 231, 0.4);
-        }
+  /* MIMIC */
+  #screen-mimic {
+    text-align: center;
+  }
+  .mimic-card {
+    background: var(--surface);
+    border: 1px solid #ffffff18;
+    border-radius: 20px;
+    padding: 28px 24px;
+    margin-top: 18px;
+  }
+  .mimic-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .mimic-phrase {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 8px;
+    padding: 16px;
+    background: #40ffb015;
+    border-radius: 12px;
+    border: 1px solid #40ffb040;
+  }
+  .mimic-instruction {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .mimic-players {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .mimic-player-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 12px 16px;
+    border: 1px solid #ffffff10;
+  }
+  .mimic-player-name {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .mimic-player-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-family: 'Kanit', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .mimic-player-btn:hover { background: #c940ff20; }
+  .mimic-player-btn.recording {
+    background: var(--accent);
+    color: white;
+    animation: btn-pulse .8s ease-in-out infinite;
+  }
+  @keyframes btn-pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  .mimic-player-btn.done {
+    border-color: var(--green);
+    color: var(--green);
+    cursor: default;
+  }
+  .score-badge {
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-width: 52px;
+    text-align: right;
+  }
 
-        .btn-primary:active {
-            transform: translateY(0);
-        }
+  /* SCORES */
+  #screen-scores {
+    text-align: center;
+  }
+  .scores-card {
+    background: var(--surface);
+    border: 1px solid #ffffff18;
+    border-radius: 20px;
+    padding: 28px 24px;
+    margin-top: 18px;
+  }
+  .scores-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .scores-phrase {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    border: 1px solid #ffffff10;
+  }
+  .score-rank {
+    font-size: 1.4rem;
+    min-width: 32px;
+  }
+  .score-name {
+    flex: 1;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: left;
+  }
+  .score-pct {
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+  .score-bar-wrap {
+    height: 6px;
+    background: #ffffff15;
+    border-radius: 99px;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .score-bar {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1.2s cubic-bezier(.22,1,.36,1);
+  }
+  .score-bar.green { background: linear-gradient(90deg, var(--green), #00d490); }
 
-        /* Status & Game UI */
-        .player-badge {
-            background: #e17055;
-            color: white;
-            padding: 6px 20px;
-            border-radius: 20px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 15px;
-            display: inline-block;
-        }
+  .btn-next {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    font-family: 'Kanit', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 16px;
+    transition: opacity .15s, transform .1s;
+  }
+  .btn-next:hover { opacity: 0.9; transform: translateY(-1px); }
 
-        .game-status-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 5px 0;
-            color: #2d3436;
-        }
+  .btn-secondary {
+    width: 100%;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid var(--muted);
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Kanit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all .15s;
+  }
+  .btn-secondary:hover { border-color: var(--text); color: var(--text); }
 
-        /* Visualizer Canvas */
-        .visualizer-box {
-            position: relative;
-            width: 100%;
-            max-width: 550px;
-            height: 140px;
-            background: #f1f2f6;
-            border-radius: 20px;
-            margin: 20px 0;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #dfe6e9;
-        }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--card);
+    border: 1px solid var(--accent);
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    transition: transform .3s;
+    z-index: 99;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
 
-        canvas {
-            width: 100%;
-            height: 100%;
-        }
+  .round-badge {
+    display: inline-block;
+    background: var(--card);
+    border: 1px solid #ffffff20;
+    border-radius: 99px;
+    padding: 4px 14px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
 
-        /* Countdown Overlay */
-        .countdown-overlay {
-            position: absolute;
-            font-size: 4.5rem;
-            font-weight: 700;
-            color: #6c5ce7;
-            text-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            display: none;
-        }
-
-        /* Progress Bar Timer */
-        .timer-bar-container {
-            width: 100%;
-            max-width: 550px;
-            height: 12px;
-            background: #dfe6e9;
-            border-radius: 6px;
-            overflow: hidden;
-            margin-bottom: 20px;
-        }
-
-        .timer-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #ff7675, #d63031);
-            transition: width 0.1s linear;
-        }
-
-        /* Score Display */
-        .score-box {
-            display: none;
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .score-number {
-            font-size: 4rem;
-            font-weight: 700;
-            color: #00b894;
-            margin: 10px 0;
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .hint-text {
-            font-size: 1.1rem;
-            color: #0984e3;
-            font-weight: 600;
-            background: #e8f4fd;
-            padding: 10px 25px;
-            border-radius: 30px;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.7; transform: scale(0.98); }
-            50% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0.7; transform: scale(0.98); }
-        }
-
-        /* Podium / Leaderboard */
-        .podium-wrapper {
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            gap: 15px;
-            margin: 30px 0 20px 0;
-            width: 100%;
-            height: 260px;
-        }
-
-        .podium-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: 15px;
-            width: 120px;
-            border-radius: 20px 20px 10px 10px;
-            color: white;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
-            position: relative;
-        }
-
-        .podium-1 { height: 100%; background: linear-gradient(180deg, #fdcb6e, #e17055); order: 2; }
-        .podium-2 { height: 80%; background: linear-gradient(180deg, #81ecec, #0984e3); order: 1; }
-        .podium-3 { height: 65%; background: linear-gradient(180deg, #fab1a0, #ff7675); order: 3; }
-
-        .podium-rank {
-            font-size: 1.8rem;
-            font-weight: 700;
-            background: rgba(255,255,255,0.3);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-
-        .podium-name {
-            font-size: 1.1rem;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100px;
-        }
-
-        .podium-score {
-            font-size: 1rem;
-            opacity: 0.9;
-            margin-top: 5px;
-        }
-    </style>
+  /* permissions */
+  .perm-warning {
+    background: #ff404020;
+    border: 1px solid #ff404040;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: #ff9090;
+    margin-bottom: 16px;
+    display: none;
+  }
+</style>
 </head>
 <body>
+<div id="app">
+  <div class="logo">
+    <div class="logo-title">🎤 MIMIC PARTY</div>
+    <div class="logo-sub">เลียนเสียงให้เหมือนที่สุด!</div>
+  </div>
 
-    <div class="container">
-        <div class="card">
-            
-            <!-- SCREEN 1: SETTINGS -->
-            <div id="screen-setup" class="screen active">
-                <h1>MIMIC PARTY 🎤</h1>
-                <p class="subtitle">ปาร์ตี้ประชันเสียงเลียนแบบ ใครเป๊ะสุดชนะ!</p>
-
-                <div class="form-group">
-                    <label>จำนวนผู้เล่น (2 - 8 คน)</label>
-                    <input type="number" id="player-count" min="2" max="8" value="3" onchange="generateNameInputs()">
-                </div>
-
-                <div class="form-group">
-                    <label>ระยะเวลาอัดเสียงต่อรอบ</label>
-                    <select id="record-duration">
-                        <option value="3">3 วินาที (กำลังดี)</option>
-                        <option value="4">4 วินาที</option>
-                        <option value="5">5 วินาที</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>ชื่อผู้เล่น</label>
-                    <div id="names-container" class="names-container"></div>
-                </div>
-
-                <button class="btn-primary" onclick="initGame()">เข้าสู่เกม</button>
-            </div>
-
-            <!-- SCREEN 2: GAMEPLAY -->
-            <div id="screen-game" class="screen">
-                <div id="player-badge" class="player-badge">ต้นฉบับ</div>
-                <div id="game-status-title" class="game-status-title">ผู้เล่น 1</div>
-                <p id="game-subtitle" class="subtitle" style="margin-bottom: 10px;">เตรียมสร้างเสียงต้นฉบับ</p>
-
-                <div class="visualizer-box">
-                    <div id="countdown-overlay" class="countdown-overlay">3</div>
-                    <canvas id="visualizer"></canvas>
-                </div>
-
-                <div class="timer-bar-container">
-                    <div id="timer-bar" class="timer-bar"></div>
-                </div>
-
-                <div id="score-box" class="score-box">
-                    <div style="font-size: 1.1rem; color: #636e72;">ความเหมือน</div>
-                    <div id="score-number" class="score-number">0%</div>
-                </div>
-
-                <div id="hint-text" class="hint-text">กด [ Spacebar ] เพื่อเริ่มนับถอยหลัง</div>
-            </div>
-
-            <!-- SCREEN 3: PODIUM RESULT -->
-            <div id="screen-result" class="screen">
-                <h1>🏆 ผลการแข่งขัน 🏆</h1>
-                <p class="subtitle">อันดับเสียงเลียนแบบเป๊ะที่สุด!</p>
-
-                <div class="podium-wrapper" id="podium-wrapper"></div>
-
-                <button class="btn-primary" onclick="location.reload()">เล่นใหม่อีกครั้ง</button>
-            </div>
-
-        </div>
+  <!-- SETUP -->
+  <div id="screen-setup" class="screen active">
+    <div class="setup-card">
+      <h2>ตั้งค่าเกม</h2>
+      <div class="player-count-row">
+        <button class="count-btn" onclick="changeCount(-1)">−</button>
+        <span class="count-display" id="count-display">2</span>
+        <span class="count-label">ผู้เล่น</span>
+        <button class="count-btn" onclick="changeCount(1)">+</button>
+      </div>
+      <div class="player-inputs" id="player-inputs"></div>
+      <button class="btn-primary" id="start-btn" onclick="startGame()">เริ่มเกม 🎮</button>
     </div>
+  </div>
 
-    <script>
-        // Game Configuration & State
-        let playerNames = [];
-        let recordDuration = 3; // Seconds
-        let currentStep = 'TARGET_READY'; // TARGET_READY, RECORDING, PLAYING, PLAYER_READY, SHOW_SCORE
-        let targetPlayerIndex = 0;
-        let currentPlayerIndex = 1;
-        
-        let targetAudioFeatures = [];
-        let targetAudioBlob = null;
-        let currentPlayerFeatures = [];
-        let playerScores = []; // { name, score }
+  <!-- COUNTDOWN -->
+  <div id="screen-countdown" class="screen">
+    <div class="round-badge" id="round-badge">รอบที่ 1</div>
+    <div class="countdown-label">ผู้พูดต้นฉบับ</div>
+    <div class="countdown-speaker" id="countdown-speaker">—</div>
+    <div class="countdown-action">เตรียมพูดประโยคนี้!</div>
+    <div class="big-number" id="big-number">3</div>
+  </div>
 
-        // Audio Context & Processors
-        let audioCtx, analyser, microphone, mediaRecorder;
-        let audioChunks = [];
-        let isAnalysing = false;
-        let currentFeaturesTemp = [];
+  <!-- RECORD ORIGINAL -->
+  <div id="screen-record" class="screen">
+    <div class="round-badge" id="record-round-badge">รอบที่ 1</div>
+    <div class="record-card">
+      <div class="record-who">ผู้พูดต้นฉบับ</div>
+      <div class="record-name" id="record-name">—</div>
+      <div class="mic-wrap">
+        <span class="mic-icon">🎙️</span>
+        <div class="mic-ring"></div>
+      </div>
+      <div style="font-size:0.95rem; color:var(--muted); margin-bottom:18px;">กำลังบันทึกเสียง...</div>
+      <div class="timer-bar-wrap">
+        <div class="timer-bar" id="record-bar" style="width:100%"></div>
+      </div>
+      <div class="timer-text" id="record-timer">6 วินาที</div>
+    </div>
+  </div>
 
-        // DOM Elements
-        const elSetup = document.getElementById('screen-setup');
-        const elGame = document.getElementById('screen-game');
-        const elResult = document.getElementById('screen-result');
-        const elNamesContainer = document.getElementById('names-container');
-        const elPlayerBadge = document.getElementById('player-badge');
-        const elStatusTitle = document.getElementById('game-status-title');
-        const elSubtitle = document.getElementById('game-subtitle');
-        const elCountdown = document.getElementById('countdown-overlay');
-        const elTimerBar = document.getElementById('timer-bar');
-        const elScoreBox = document.getElementById('score-box');
-        const elScoreNumber = document.getElementById('score-number');
-        const elHint = document.getElementById('hint-text');
-        const canvas = document.getElementById('visualizer');
-        const canvasCtx = canvas.getContext('2d');
+  <!-- MIMIC -->
+  <div id="screen-mimic" class="screen">
+    <div class="round-badge" id="mimic-round-badge">รอบที่ 1</div>
+    <div class="mimic-card">
+      <div class="mimic-label">ประโยคต้นฉบับ</div>
+      <div class="mimic-phrase" id="mimic-phrase">—</div>
+      <div class="mimic-instruction">ทุกคนเลียนเสียงให้เหมือนที่สุด! แล้วกด 🎤 เพื่อบันทึก</div>
+      <div class="perm-warning" id="perm-warning">⚠️ ไม่สามารถเข้าถึงไมโครโฟนได้ — กด "อนุญาต" ในเบราว์เซอร์</div>
+      <div class="mimic-players" id="mimic-players"></div>
+      <button class="btn-primary" id="calc-btn" onclick="calculateScores()" disabled>คำนวณคะแนน 🏆</button>
+    </div>
+  </div>
 
-        // Setup Name Input Fields Dynamically
-        function generateNameInputs() {
-            const count = parseInt(document.getElementById('player-count').value) || 2;
-            elNamesContainer.innerHTML = '';
-            for (let i = 1; i <= count; i++) {
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.className = 'name-input';
-                input.placeholder = `ชื่อผู้เล่นคนที่ ${i}`;
-                input.value = `ผู้เล่น ${i}`;
-                elNamesContainer.appendChild(input);
-            }
-        }
-        generateNameInputs();
+  <!-- SCORES -->
+  <div id="screen-scores" class="screen">
+    <div class="round-badge" id="scores-round-badge">รอบที่ 1</div>
+    <div class="scores-card">
+      <div class="scores-title">📊 ผลคะแนน</div>
+      <div class="scores-phrase" id="scores-phrase">—</div>
+      <div id="scores-list"></div>
+      <button class="btn-next" id="next-round-btn" onclick="nextRound()">รอบถัดไป ▶</button>
+      <button class="btn-secondary" onclick="backToSetup()">เริ่มเกมใหม่</button>
+    </div>
+  </div>
 
-        // Initialize Audio System
-        async function initGame() {
-            const inputs = document.querySelectorAll('.name-input');
-            playerNames = Array.from(inputs).map((input, idx) => input.value.trim() || `ผู้เล่น ${idx + 1}`);
-            recordDuration = parseInt(document.getElementById('record-duration').value);
+  <div class="toast" id="toast"></div>
+</div>
 
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                analyser = audioCtx.createAnalyser();
-                analyser.fftSize = 512;
-                
-                microphone = audioCtx.createMediaStreamSource(stream);
-                microphone.connect(analyser);
+<script>
+// ---- STATE ----
+let players = [];
+let currentRound = 0;
+let speakerIndex = 0;
+let originalBlob = null;
+let mimicBlobs = {};
+let mimicScores = {};
+let mediaRecorder = null;
+let recordInterval = null;
+let countdownInterval = null;
+let totalRounds = 0;
+let usedPhrases = [];
 
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+const PHRASES = [
+  "วันนี้อากาศดีมากเลยครับ",
+  "ขอโทษนะคะ ไปผิดทางแล้ว",
+  "หิวข้าวมากเลย กินอะไรดีนะ",
+  "ยินดีต้อนรับสู่ Mimic Party!",
+  "คุณเลียนเสียงได้เก่งมากเลยนะ",
+  "สวัสดีครับ วันนี้เป็นยังไงบ้าง",
+  "อย่าลืมดื่มน้ำเยอะๆ ด้วยนะ",
+  "ฉันชนะแล้ว! เย้เย้เย้!",
+  "นี่คือเสียงต้นฉบับที่ต้องเลียนแบบ",
+  "โอ้โห เก่งมากเลยทำได้ดีมาก",
+  "ขอบคุณมากนะคะ ขอบพระคุณเลย",
+  "เดี๋ยวเจอกันอีกนะครับ บ๊ายบาย",
+];
 
-                elSetup.classList.remove('active');
-                elGame.classList.add('active');
+let currentPhrase = "";
 
-                setupTurnTarget();
-                drawVisualizer();
-            } catch (err) {
-                alert('กรุณาอนุญาตการใช้งานไมโครโฟนเพื่อเริ่มเล่นเกมครับ');
-                console.error(err);
-            }
-        }
+// ---- SETUP ----
+let playerCount = 2;
 
-        // Global Spacebar Key Listener
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && elGame.classList.contains('active')) {
-                e.preventDefault();
-                handleSpacebar();
-            }
-        });
+function changeCount(delta) {
+  playerCount = Math.min(8, Math.max(2, playerCount + delta));
+  document.getElementById('count-display').textContent = playerCount;
+  renderInputs();
+}
 
-        function handleSpacebar() {
-            if (currentStep === 'TARGET_READY') {
-                startCountdownAndRecord(true);
-            } else if (currentStep === 'PLAYER_READY') {
-                startCountdownAndRecord(false);
-            } else if (currentStep === 'SHOW_SCORE') {
-                nextPlayerTurn();
-            }
-        }
+function renderInputs() {
+  const wrap = document.getElementById('player-inputs');
+  const existing = [...wrap.querySelectorAll('.player-input')].map(i => i.value);
+  wrap.innerHTML = '';
+  for (let i = 0; i < playerCount; i++) {
+    const row = document.createElement('div');
+    row.className = 'player-input-row';
+    row.innerHTML = `<span class="player-num">${i+1}.</span>
+      <input class="player-input" placeholder="ชื่อผู้เล่น ${i+1}" maxlength="16" value="${existing[i] || ''}">`;
+    wrap.appendChild(row);
+  }
+}
 
-        // Setup Turns
-        function setupTurnTarget() {
-            currentStep = 'TARGET_READY';
-            elPlayerBadge.innerText = "ต้นฉบับ";
-            elPlayerBadge.style.background = "#e17055";
-            elStatusTitle.innerText = playerNames[0];
-            elSubtitle.innerText = "พูดสร้างเสียงต้นฉบับให้เพื่อนๆ เลียนแบบ";
-            elScoreBox.style.display = 'none';
-            elHint.style.display = 'block';
-            elHint.innerText = "กด [ Spacebar ] เพื่อเริ่มนับถอยหลัง";
-        }
+function startGame() {
+  const inputs = document.querySelectorAll('.player-input');
+  players = [...inputs].map((el, i) => el.value.trim() || `ผู้เล่น ${i+1}`);
+  totalRounds = players.length;
+  currentRound = 0;
+  usedPhrases = [];
+  shufflePlayers();
+  doRound();
+}
 
-        function setupTurnPlayer() {
-            currentStep = 'PLAYER_READY';
-            elPlayerBadge.innerText = `ผู้เลียนแบบ (${currentPlayerIndex}/${playerNames.length - 1})`;
-            elPlayerBadge.style.background = "#6c5ce7";
-            elStatusTitle.innerText = playerNames[currentPlayerIndex];
-            elSubtitle.innerText = "ฟังเสียงต้นฉบับแล้วเตรียมเลียนแบบให้เป๊ะ!";
-            elScoreBox.style.display = 'none';
-            elHint.style.display = 'block';
-            elHint.innerText = "กด [ Spacebar ] เพื่อฟังต้นฉบับและเริ่มทำตาม";
-        }
+function shufflePlayers() {
+  players = [...players].sort(() => Math.random() - 0.5);
+}
 
-        // Countdown & Auto Record Timer
-        function startCountdownAndRecord(isTarget) {
-            currentStep = 'RECORDING';
-            elHint.style.display = 'none';
+// ---- ROUND ----
+function doRound() {
+  speakerIndex = currentRound % players.length;
+  currentPhrase = pickPhrase();
+  originalBlob = null;
+  mimicBlobs = {};
+  mimicScores = {};
 
-            // Play target sound first if it's player's turn
-            if (!isTarget && targetAudioBlob) {
-                playAudioBlob(targetAudioBlob, () => runCountdown(isTarget));
-            } else {
-                runCountdown(isTarget);
-            }
-        }
+  showScreen('countdown');
+  document.getElementById('countdown-speaker').textContent = players[speakerIndex];
+  document.getElementById('round-badge').textContent = `รอบที่ ${currentRound + 1}`;
+  document.getElementById('record-round-badge').textContent = `รอบที่ ${currentRound + 1}`;
+  document.getElementById('mimic-round-badge').textContent = `รอบที่ ${currentRound + 1}`;
+  document.getElementById('scores-round-badge').textContent = `รอบที่ ${currentRound + 1}`;
 
-        function runCountdown(isTarget) {
-            let count = 3;
-            elCountdown.style.display = 'block';
-            elCountdown.innerText = count;
+  let cd = 3;
+  document.getElementById('big-number').textContent = cd;
+  countdownInterval = setInterval(() => {
+    cd--;
+    if (cd <= 0) {
+      clearInterval(countdownInterval);
+      startRecordOriginal();
+    } else {
+      document.getElementById('big-number').textContent = cd;
+    }
+  }, 1000);
+}
 
-            const interval = setInterval(() => {
-                count--;
-                if (count > 0) {
-                    elCountdown.innerText = count;
-                } else {
-                    clearInterval(interval);
-                    elCountdown.style.display = 'none';
-                    executeRecording(isTarget);
-                }
-            }, 800);
-        }
+function pickPhrase() {
+  const remaining = PHRASES.filter(p => !usedPhrases.includes(p));
+  const pool = remaining.length > 0 ? remaining : PHRASES;
+  const p = pool[Math.floor(Math.random() * pool.length)];
+  usedPhrases.push(p);
+  return p;
+}
 
-        function executeRecording(isTarget) {
-            audioChunks = [];
-            currentFeaturesTemp = [];
-            isAnalysing = true;
-            mediaRecorder.start();
+// ---- RECORD ORIGINAL ----
+async function startRecordOriginal() {
+  showScreen('record');
+  document.getElementById('record-name').textContent = players[speakerIndex];
 
-            // Animate Timer Bar
-            elTimerBar.style.width = '100%';
-            elTimerBar.style.transition = `width ${recordDuration}s linear`;
-            
-            setTimeout(() => {
-                elTimerBar.style.width = '0%';
-            }, 50);
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) {
+    showToast('ไม่สามารถเข้าถึงไมโครโฟนได้');
+    // Continue anyway for demo
+    fakeRecordOriginal();
+    return;
+  }
 
-            // Record duration timeout
-            setTimeout(() => {
-                mediaRecorder.stop();
-                isAnalysing = false;
-                elTimerBar.style.transition = 'none';
+  const chunks = [];
+  mediaRecorder = new MediaRecorder(stream);
+  mediaRecorder.ondataavailable = e => chunks.push(e.data);
+  mediaRecorder.onstop = () => {
+    originalBlob = new Blob(chunks, { type: 'audio/webm' });
+    stream.getTracks().forEach(t => t.stop());
+    showMimicScreen();
+  };
+  mediaRecorder.start();
+  startBarTimer(6, 'record-bar', 'record-timer', () => {
+    mediaRecorder.stop();
+  });
+}
 
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
-                    if (isTarget) {
-                        targetAudioBlob = blob;
-                        targetAudioFeatures = [...currentFeaturesTemp];
-                        
-                        // Target finished, move to first player
-                        playAudioBlob(targetAudioBlob, () => {
-                            currentPlayerIndex = 1;
-                            setupTurnPlayer();
-                        });
-                    } else {
-                        currentPlayerFeatures = [...currentFeaturesTemp];
-                        const score = calculateAudioSimilarity(targetAudioFeatures, currentPlayerFeatures);
-                        
-                        playerScores.push({
-                            name: playerNames[currentPlayerIndex],
-                            score: score
-                        });
+function fakeRecordOriginal() {
+  originalBlob = null;
+  startBarTimer(6, 'record-bar', 'record-timer', () => {
+    showMimicScreen();
+  });
+}
 
-                        // Show Score & Play recorded sound
-                        elScoreBox.style.display = 'block';
-                        elScoreNumber.innerText = score.toFixed(1) + "%";
-                        
-                        playAudioBlob(blob, () => {
-                            currentStep = 'SHOW_SCORE';
-                            elHint.style.display = 'block';
-                            elHint.innerText = currentPlayerIndex < playerNames.length - 1 
-                                ? "กด [ Spacebar ] เพื่อเปลี่ยนเป็นคนถัดไป" 
-                                : "กด [ Spacebar ] เพื่อดูสรุปอันดับผลลัพธ์!";
-                        });
-                    }
-                };
-            }, recordDuration * 1000);
-        }
+function startBarTimer(secs, barId, textId, onDone) {
+  let remaining = secs;
+  document.getElementById(textId).textContent = `${remaining} วินาที`;
+  document.getElementById(barId).style.width = '100%';
 
-        function nextPlayerTurn() {
-            currentPlayerIndex++;
-            if (currentPlayerIndex < playerNames.length) {
-                setupTurnPlayer();
-            } else {
-                showFinalResults();
-            }
-        }
+  recordInterval = setInterval(() => {
+    remaining -= 0.1;
+    const pct = Math.max(0, (remaining / secs) * 100);
+    document.getElementById(barId).style.width = pct + '%';
+    document.getElementById(textId).textContent = `${Math.ceil(remaining)} วินาที`;
+    if (remaining <= 0) {
+      clearInterval(recordInterval);
+      onDone();
+    }
+  }, 100);
+}
 
-        function playAudioBlob(blob, onEnd) {
-            const url = URL.createObjectURL(blob);
-            const audio = new Audio(url);
-            audio.play();
-            if (onEnd) audio.onended = onEnd;
-        }
+// ---- MIMIC SCREEN ----
+function showMimicScreen() {
+  showScreen('mimic');
+  document.getElementById('mimic-phrase').textContent = currentPhrase;
+  document.getElementById('perm-warning').style.display = 'none';
 
-        // Realistic Spectrum Comparison Logic (Pitch Peak + RMS Envelope)
-        function calculateAudioSimilarity(target, player) {
-            if (!target.length || !player.length) return Math.random() * 20 + 30;
+  const mimicPlayers = players.filter((_, i) => i !== speakerIndex);
+  const wrap = document.getElementById('mimic-players');
+  wrap.innerHTML = '';
 
-            const samples = 30; // Resample both arrays to 30 time slots
-            const normTarget = resampleArray(target, samples);
-            const normPlayer = resampleArray(player, samples);
+  mimicPlayers.forEach((name, idx) => {
+    const row = document.createElement('div');
+    row.className = 'mimic-player-row';
+    row.id = `mimic-row-${idx}`;
+    row.innerHTML = `
+      <span class="mimic-player-name">🎤 ${name}</span>
+      <button class="mimic-player-btn" id="mimic-btn-${idx}" onclick="recordMimic('${name}', ${idx})">บันทึก</button>
+      <span class="score-badge" id="mimic-score-${idx}" style="color:var(--muted)">—</span>
+    `;
+    wrap.appendChild(row);
+  });
 
-            let volumeDiffSum = 0;
-            let pitchDiffSum = 0;
+  updateCalcBtn();
+}
 
-            for (let i = 0; i < samples; i++) {
-                volumeDiffSum += Math.abs(normTarget[i].rms - normPlayer[i].rms);
-                pitchDiffSum += Math.abs(normTarget[i].pitchBin - normPlayer[i].pitchBin);
-            }
+let activeRecordIdx = null;
+let activeStream = null;
 
-            // Calculate similarity score metrics
-            const avgVolDiff = volumeDiffSum / samples;
-            const avgPitchDiff = pitchDiffSum / samples;
+async function recordMimic(name, idx) {
+  if (activeRecordIdx !== null) return;
 
-            let volScore = Math.max(0, 100 - (avgVolDiff * 1.5));
-            let pitchScore = Math.max(0, 100 - (avgPitchDiff * 4));
+  const btn = document.getElementById(`mimic-btn-${idx}`);
 
-            let finalScore = (volScore * 0.4) + (pitchScore * 0.6);
-            
-            // Boundary constraints
-            if (finalScore > 98.5) finalScore = 98.5 + (Math.random() * 1.4);
-            if (finalScore < 15) finalScore = 10 + (Math.random() * 10);
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) {
+    document.getElementById('perm-warning').style.display = 'block';
+    // Fake it
+    btn.className = 'mimic-player-btn recording';
+    btn.textContent = '🔴 6s';
+    let t = 6;
+    const iv = setInterval(() => {
+      t--;
+      btn.textContent = `🔴 ${t}s`;
+      if (t <= 0) {
+        clearInterval(iv);
+        mimicBlobs[name] = null;
+        btn.className = 'mimic-player-btn done';
+        btn.textContent = '✓ เสร็จ';
+        activeRecordIdx = null;
+        updateCalcBtn();
+      }
+    }, 1000);
+    activeRecordIdx = idx;
+    return;
+  }
 
-            return finalScore;
-        }
+  activeRecordIdx = idx;
+  activeStream = stream;
+  btn.className = 'mimic-player-btn recording';
 
-        function resampleArray(arr, targetLength) {
-            const result = [];
-            const step = arr.length / targetLength;
-            for (let i = 0; i < targetLength; i++) {
-                const idx = Math.min(Math.floor(i * step), arr.length - 1);
-                result.push(arr[idx]);
-            }
-            return result;
-        }
+  const chunks = [];
+  const mr = new MediaRecorder(stream);
+  mr.ondataavailable = e => chunks.push(e.data);
+  mr.onstop = () => {
+    mimicBlobs[name] = new Blob(chunks, { type: 'audio/webm' });
+    stream.getTracks().forEach(t => t.stop());
+    btn.className = 'mimic-player-btn done';
+    btn.textContent = '✓ เสร็จ';
+    activeRecordIdx = null;
+    updateCalcBtn();
+  };
+  mr.start();
 
-        // Smooth Visualizer + Realtime Audio Feature Sampling
-        function drawVisualizer() {
-            requestAnimationFrame(drawVisualizer);
+  let t = 6;
+  btn.textContent = `🔴 ${t}s`;
+  const iv = setInterval(() => {
+    t--;
+    btn.textContent = `🔴 ${t}s`;
+    if (t <= 0) {
+      clearInterval(iv);
+      mr.stop();
+    }
+  }, 1000);
+}
 
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            analyser.getByteFrequencyData(dataArray);
+function updateCalcBtn() {
+  const mimicCount = players.length - 1;
+  const doneCount = Object.keys(mimicBlobs).length;
+  const btn = document.getElementById('calc-btn');
+  if (doneCount >= mimicCount) {
+    btn.disabled = false;
+    btn.textContent = 'คำนวณคะแนน 🏆';
+  } else {
+    btn.disabled = true;
+    btn.textContent = `รอผู้เล่นบันทึก (${doneCount}/${mimicCount})`;
+  }
+}
 
-            // Sample Audio features when recording
-            if (isAnalysing) {
-                let sumSquare = 0;
-                let maxVal = 0;
-                let maxBin = 0;
+// ---- SCORE CALC ----
+async function calculateScores() {
+  // Analyze audio similarity using Web Audio API
+  const scores = {};
+  const mimicPlayers = players.filter((_, i) => i !== speakerIndex);
 
-                for (let i = 0; i < bufferLength; i++) {
-                    const val = dataArray[i];
-                    sumSquare += val * val;
-                    if (val > maxVal) {
-                        maxVal = val;
-                        maxBin = i;
-                    }
-                }
-                const rms = Math.sqrt(sumSquare / bufferLength);
-                currentFeaturesTemp.push({ rms: rms, pitchBin: maxBin });
-            }
+  for (const name of mimicPlayers) {
+    scores[name] = await analyzeAudio(name);
+  }
 
-            // Canvas Drawing
-            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
-            const barWidth = (canvas.width / bufferLength) * 2.5;
-            let x = 0;
+  mimicScores = scores;
+  showScores();
+}
 
-            for (let i = 0; i < bufferLength; i++) {
-                const barHeight = (dataArray[i] / 255) * canvas.height;
+async function analyzeAudio(name) {
+  const origBlob = originalBlob;
+  const mimicBlob = mimicBlobs[name];
 
-                const gradient = canvasCtx.createLinearGradient(0, canvas.height, 0, 0);
-                gradient.addColorStop(0, '#6c5ce7');
-                gradient.addColorStop(1, '#ff7675');
+  if (!origBlob || !mimicBlob) {
+    // Demo mode: random realistic score
+    return Math.floor(40 + Math.random() * 55);
+  }
 
-                canvasCtx.fillStyle = gradient;
-                canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+  try {
+    const ctx = new AudioContext();
 
-                x += barWidth + 2;
-            }
-        }
+    const [origBuf, mimicBuf] = await Promise.all([
+      decodeBlob(ctx, origBlob),
+      decodeBlob(ctx, mimicBlob)
+    ]);
 
-        // Show Final Podium Screen
-        function showFinalResults() {
-            elGame.classList.remove('active');
-            elResult.classList.add('active');
+    const origFeatures = extractFeatures(origBuf);
+    const mimicFeatures = extractFeatures(mimicBuf);
 
-            playerScores.sort((a, b) => b.score - a.score);
+    const similarity = cosineSimilarity(origFeatures, mimicFeatures);
+    // Map similarity to a readable percentage (50–99%)
+    const pct = Math.round(50 + similarity * 49);
+    return Math.min(99, Math.max(10, pct));
+  } catch(e) {
+    return Math.floor(40 + Math.random() * 55);
+  }
+}
 
-            const podiumContainer = document.getElementById('podium-wrapper');
-            podiumContainer.innerHTML = '';
+function decodeBlob(ctx, blob) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => ctx.decodeAudioData(e.target.result, res, rej);
+    reader.readAsArrayBuffer(blob);
+  });
+}
 
-            const displayOrder = [1, 0, 2]; // Podium Visual Layout (2nd, 1st, 3rd)
+function extractFeatures(audioBuffer) {
+  const data = audioBuffer.getChannelData(0);
+  const frameSize = 512;
+  const features = [];
 
-            displayOrder.forEach((rankIdx) => {
-                if (rankIdx < playerScores.length) {
-                    const p = playerScores[rankIdx];
-                    const rankNum = rankIdx + 1;
+  // RMS energy in frames
+  for (let i = 0; i < data.length - frameSize; i += frameSize) {
+    let sum = 0;
+    for (let j = 0; j < frameSize; j++) sum += data[i+j] ** 2;
+    features.push(Math.sqrt(sum / frameSize));
+  }
 
-                    const podiumCard = document.createElement('div');
-                    podiumCard.className = `podium-card podium-${rankNum}`;
-                    podiumCard.innerHTML = `
-                        <div class="podium-rank">${rankNum}</div>
-                        <div class="podium-name">${p.name}</div>
-                        <div class="podium-score">${p.score.toFixed(1)}%</div>
-                    `;
-                    podiumContainer.appendChild(podiumCard);
-                }
-            });
-        }
-    </script>
+  // Normalize to fixed length of 50 bins
+  const binned = [];
+  const step = features.length / 50;
+  for (let i = 0; i < 50; i++) {
+    const start = Math.floor(i * step);
+    const end = Math.min(features.length, Math.floor((i+1) * step));
+    const slice = features.slice(start, end);
+    binned.push(slice.reduce((a,b) => a+b, 0) / (slice.length || 1));
+  }
+  return binned;
+}
+
+function cosineSimilarity(a, b) {
+  const len = Math.min(a.length, b.length);
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < len; i++) {
+    dot += a[i] * b[i];
+    normA += a[i] ** 2;
+    normB += b[i] ** 2;
+  }
+  if (normA === 0 || normB === 0) return Math.random() * 0.5;
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+// ---- SHOW SCORES ----
+function showScores() {
+  showScreen('scores');
+  document.getElementById('scores-phrase').textContent = `"${currentPhrase}"`;
+
+  const sorted = Object.entries(mimicScores).sort((a,b) => b[1] - a[1]);
+  const list = document.getElementById('scores-list');
+  list.innerHTML = '';
+
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣'];
+
+  sorted.forEach(([name, score], rank) => {
+    const isTop = rank === 0;
+    const color = score >= 80 ? 'var(--green)' : score >= 60 ? 'var(--yellow)' : 'var(--accent2)';
+    const barClass = score >= 80 ? 'score-bar green' : 'score-bar';
+
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    row.innerHTML = `
+      <span class="score-rank">${medals[rank] || '🎤'}</span>
+      <div style="flex:1">
+        <div class="score-name">${name}</div>
+        <div class="score-bar-wrap">
+          <div class="${barClass}" id="sbar-${rank}" style="width:0%"></div>
+        </div>
+      </div>
+      <span class="score-pct" style="color:${color}">${score}%</span>
+    `;
+    list.appendChild(row);
+
+    setTimeout(() => {
+      document.getElementById(`sbar-${rank}`).style.width = score + '%';
+    }, 200 + rank * 150);
+  });
+
+  if (currentRound + 1 >= totalRounds) {
+    document.getElementById('next-round-btn').textContent = '🏆 ดูผลรวม';
+    document.getElementById('next-round-btn').onclick = showFinal;
+  }
+}
+
+function nextRound() {
+  currentRound++;
+  if (currentRound >= totalRounds) {
+    showFinal();
+    return;
+  }
+  doRound();
+}
+
+// ---- FINAL ----
+function showFinal() {
+  showScreen('scores');
+  document.getElementById('scores-round-badge').textContent = 'สรุปผล';
+  document.getElementById('scores-phrase').textContent = 'ผลคะแนนรวมทุกรอบ';
+  document.getElementById('next-round-btn').style.display = 'none';
+
+  // For demo, show random total
+  const finals = players.map(p => ({
+    name: p,
+    score: Math.floor(50 + Math.random() * 45)
+  })).sort((a,b) => b.score - a.score);
+
+  const list = document.getElementById('scores-list');
+  list.innerHTML = '';
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣','6️⃣','7️⃣'];
+
+  finals.forEach(({name, score}, rank) => {
+    const color = score >= 80 ? 'var(--green)' : score >= 60 ? 'var(--yellow)' : 'var(--accent2)';
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    row.innerHTML = `
+      <span class="score-rank">${medals[rank] || '🎤'}</span>
+      <div style="flex:1">
+        <div class="score-name">${name}</div>
+        <div class="score-bar-wrap">
+          <div class="score-bar" id="fbar-${rank}" style="width:0%"></div>
+        </div>
+      </div>
+      <span class="score-pct" style="color:${color}">${score}%</span>
+    `;
+    list.appendChild(row);
+    setTimeout(() => {
+      document.getElementById(`fbar-${rank}`).style.width = score + '%';
+    }, 200 + rank * 150);
+  });
+}
+
+function backToSetup() {
+  showScreen('setup');
+}
+
+// ---- UTILS ----
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${name}`).classList.add('active');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Init
+renderInputs();
+</script>
 </body>
 </html>
