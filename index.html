@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mimic Party - เลียนแบบเสียง</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a2e;
+            color: #fff;
+            font-family: 'Kanit', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            text-align: center;
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #e94560;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        input {
+            padding: 15px;
+            font-size: 1.5rem;
+            border-radius: 10px;
+            border: none;
+            text-align: center;
+            margin: 20px 0;
+            width: 150px;
+            background: #16213e;
+            color: #fff;
+            border: 2px solid #0f3460;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            font-family: 'Kanit', sans-serif;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #ff5c77;
+            box-shadow: 0 0 15px #e94560;
+        }
+
+        .instruction {
+            font-size: 1.5rem;
+            color: #4cd137;
+            margin-top: 20px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        canvas {
+            background-color: #0f3460;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #e94560;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.3);
+        }
+
+        #score-display {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #fbc531;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(251, 197, 49, 0.5);
+        }
+
+        .podium {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+            height: 300px;
+        }
+
+        .podium-place {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 120px;
+            background: linear-gradient(to top, #0f3460, #16213e);
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+        }
+
+        .place-2 { height: 60%; }
+        .place-1 { height: 90%; }
+        .place-3 { height: 40%; }
+
+        .player-name {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .player-score {
+            font-size: 1.2rem;
+            color: #fbc531;
+            margin-bottom: 20px;
+        }
+
+        .rank {
+            font-size: 3rem;
+            font-weight: bold;
+            color: rgba(255,255,255,0.2);
+            margin-top: auto;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- หน้าจอที่ 1: ตั้งค่า -->
+        <div id="screen-setup" class="screen active">
+            <h1>MIMIC PARTY 🎤</h1>
+            <p style="font-size: 1.2rem;">เกมประชันเสียงเลียนแบบ ใครเหมือนสุดชนะ!</p>
+            <input type="number" id="player-count" min="2" max="10" placeholder="จำนวนผู้เล่น">
+            <button onclick="startGame()">เริ่มปาร์ตี้</button>
+            <p style="color: gray; margin-top: 15px;">*กรุณาอนุญาตการใช้ไมโครโฟนเมื่อเบราว์เซอร์ร้องขอ</p>
+        </div>
+
+        <!-- หน้าจอที่ 2: เล่นเกม -->
+        <div id="screen-game" class="screen">
+            <h1 id="game-title">ต้นฉบับเตรียมตัว</h1>
+            <h2 id="game-subtitle">ผู้แพ้จากตาที่แล้ว สร้างเสียงต้นฉบับ</h2>
+            
+            <canvas id="visualizer" width="600" height="150"></canvas>
+            
+            <div id="score-display" style="display:none;">100%</div>
+            
+            <div id="instruction" class="instruction">กด Spacebar เพื่อเริ่มบันทึกเสียง</div>
+        </div>
+
+        <!-- หน้าจอที่ 3: สรุปผล -->
+        <div id="screen-result" class="screen">
+            <h1>🏆 แท่นรางวัล 🏆</h1>
+            <div class="podium" id="podium-container">
+                <!-- สคริปต์จะสร้างแท่นรางวัลที่นี่ -->
+            </div>
+            <button style="margin-top: 40px;" onclick="location.reload()">เล่นอีกครั้ง</button>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let numPlayers = 0;
+        let currentPlayer = 1;
+        let targetAudioData = null; // เก็บข้อมูลเสียงต้นฉบับ
+        let targetAudioDuration = 0;
+        let playerScores = [];
+        
+        // Flow Control
+        // 0 = รอต้นฉบับอัดเสียง, 1 = ต้นฉบับกำลังอัด
+        // 2 = รอผู้เล่นฟังเสียง, 3 = รอผู้เล่นอัดเสียง, 4 = ผู้เล่นกำลังอัด, 5 = โชว์คะแนนผู้เล่น
+        let currentStep = 0; 
+
+        // Audio Setup
+        let audioContext;
+        let analyser;
+        let microphone;
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+        let canvas, canvasCtx;
+        let drawVisual;
+        let recordStartTime = 0;
+
+        // Elements
+        const elSetup = document.getElementById('screen-setup');
+        const elGame = document.getElementById('screen-game');
+        const elResult = document.getElementById('screen-result');
+        const elTitle = document.getElementById('game-title');
+        const elSubtitle = document.getElementById('game-subtitle');
+        const elInstruction = document.getElementById('instruction');
+        const elScore = document.getElementById('score-display');
+        canvas = document.getElementById('visualizer');
+        canvasCtx = canvas.getContext('2d');
+
+        async function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 2048;
+
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    microphone = audioContext.createMediaStreamSource(stream);
+                    microphone.connect(analyser);
+
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    
+                } catch (err) {
+                    alert("ต้องอนุญาตไมโครโฟนเพื่อเล่นเกมนี้!");
+                    console.error(err);
+                }
+            }
+        }
+
+        async function startGame() {
+            const count = parseInt(document.getElementById('player-count').value);
+            if (isNaN(count) || count < 2) {
+                alert("ต้องมีผู้เล่นอย่างน้อย 2 คนขึ้นไป");
+                return;
+            }
+            numPlayers = count;
+            
+            await initAudio();
+            
+            elSetup.classList.remove('active');
+            elGame.classList.add('active');
+            
+            currentStep = 0;
+            updateUI();
+            drawWaveform();
+        }
+
+        // Logic จัดการปุ่ม Spacebar
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && elGame.classList.contains('active')) {
+                e.preventDefault(); // กันการเลื่อนหน้าจอ
+                handleSpacebar();
+            }
+        });
+
+        function handleSpacebar() {
+            if (currentStep === 0) {
+                // เริ่มอัดต้นฉบับ
+                startRecording();
+                currentStep = 1;
+                elInstruction.innerText = "กำลังบันทึก... กด Spacebar เพื่อหยุด";
+                elInstruction.style.color = "#ff4757";
+            } else if (currentStep === 1) {
+                // หยุดอัดต้นฉบับ
+                stopRecording((blob) => {
+                    targetAudioData = blob;
+                    targetAudioDuration = Date.now() - recordStartTime;
+                    currentStep = 2;
+                    updateUI();
+                });
+            } else if (currentStep === 2) {
+                // เล่นเสียงต้นฉบับ
+                playAudio(targetAudioData, () => {
+                    currentStep = 3;
+                    elInstruction.innerText = "กด Spacebar เพื่อเริ่มเลียนแบบเสียง!";
+                });
+                elInstruction.innerText = "กำลังเล่นเสียงต้นฉบับ...";
+            } else if (currentStep === 3) {
+                // ผู้เล่นเริ่มอัด
+                elScore.style.display = 'none';
+                startRecording();
+                currentStep = 4;
+                elInstruction.innerText = "กำลังบันทึกเสียงของคุณ... กด Spacebar เพื่อหยุด";
+                elInstruction.style.color = "#ff4757";
+            } else if (currentStep === 4) {
+                // ผู้เล่นหยุดอัด คิดคะแนน
+                stopRecording((blob) => {
+                    let duration = Date.now() - recordStartTime;
+                    let score = calculateScore(duration);
+                    
+                    playerScores.push({ player: currentPlayer, score: score });
+                    
+                    currentStep = 5;
+                    updateUI();
+                    
+                    // โชว์คะแนนและเล่นเสียงตัวเอง
+                    elScore.innerText = score.toFixed(2) + "%";
+                    elScore.style.display = 'block';
+                    playAudio(blob);
+                });
+            } else if (currentStep === 5) {
+                // ไปผู้เล่นถัดไป หรือ สรุปผล
+                currentPlayer++;
+                if (currentPlayer > numPlayers) {
+                    showResults();
+                } else {
+                    currentStep = 2;
+                    elScore.style.display = 'none';
+                    updateUI();
+                }
+            }
+        }
+
+        function updateUI() {
+            if (currentStep === 0) {
+                elTitle.innerText = "🎤 ต้นฉบับ 🎤";
+                elSubtitle.innerText = "สร้างเสียงที่ต้องการให้เพื่อนเลียนแบบ";
+                elInstruction.innerText = "กด Spacebar เพื่อเริ่มบันทึกเสียง";
+                elInstruction.style.color = "#4cd137";
+            } else if (currentStep === 2) {
+                elTitle.innerText = `🎮 ผู้เล่นคนที่ ${currentPlayer} 🎮`;
+                elSubtitle.innerText = "ฟังให้ดี แล้วพูดตามให้เป๊ะที่สุด!";
+                elInstruction.innerText = "กด Spacebar เพื่อฟังเสียงต้นฉบับ";
+                elInstruction.style.color = "#fbc531";
+            } else if (currentStep === 5) {
+                elInstruction.innerText = currentPlayer < numPlayers ? "กด Spacebar เพื่อเปลี่ยนเป็นผู้เล่นถัดไป" : "กด Spacebar เพื่อดูผลลัพธ์!";
+                elInstruction.style.color = "#00a8ff";
+            }
+        }
+
+        function startRecording() {
+            audioChunks = [];
+            recordStartTime = Date.now();
+            mediaRecorder.start();
+            isRecording = true;
+        }
+
+        function stopRecording(callback) {
+            mediaRecorder.stop();
+            isRecording = false;
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                callback(blob);
+            };
+        }
+
+        function playAudio(blob, onendedCallback) {
+            const audioUrl = URL.createObjectURL(blob);
+            const audio = new Audio(audioUrl);
+            audio.play();
+            if (onendedCallback) {
+                audio.onended = onendedCallback;
+            }
+        }
+
+        // ระบบจำลองการคำนวณคะแนน (วัดความยาวเสียง และสุ่มบวกลบเล็กน้อยเพื่อให้เป็นเกมเพลย์ที่สนุก)
+        function calculateScore(playerDuration) {
+            let diff = Math.abs(targetAudioDuration - playerDuration);
+            let baseScore = 100 - (diff / 20); // หักคะแนนตามความต่างของความยาวเสียง
+            if (baseScore < 20) baseScore = Math.random() * 20 + 10; // ขั้นต่ำ
+            
+            // สุ่ม Factor คลื่นเสียงเพื่อความตื่นเต้น
+            let accuracy = baseScore - (Math.random() * 15); 
+            if(accuracy > 99.99) accuracy = 99.99;
+            if(accuracy < 0) accuracy = 0;
+            
+            return accuracy;
+        }
+
+        function showResults() {
+            elGame.classList.remove('active');
+            elResult.classList.add('active');
+
+            // จัดเรียงคะแนนจากมากไปน้อย
+            playerScores.sort((a, b) => b.score - a.score);
+
+            const podiumContainer = document.getElementById('podium-container');
+            
+            // ตำแหน่งรางวัลเรียงแบบ: ที่ 2, ที่ 1, ที่ 3 (ตาม Layout แท่นยืน)
+            let displayOrder = [1, 0, 2]; // index ของ array ที่ถูก sort แล้ว
+            
+            displayOrder.forEach((idx, htmlIndex) => {
+                if (idx < playerScores.length) {
+                    let p = playerScores[idx];
+                    let rankNum = idx + 1;
+                    
+                    let el = document.createElement('div');
+                    el.className = `podium-place place-${rankNum}`;
+                    el.innerHTML = `
+                        <div class="player-name">ผู้เล่น ${p.player}</div>
+                        <div class="player-score">${p.score.toFixed(2)}%</div>
+                        <div class="rank">${rankNum}</div>
+                    `;
+                    podiumContainer.appendChild(el);
+                }
+            });
+        }
+
+        function drawWaveform() {
+            requestAnimationFrame(drawWaveform);
+            
+            if (!analyser) return;
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteTimeDomainData(dataArray);
+
+            canvasCtx.fillStyle = '#0f3460';
+            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            canvasCtx.lineWidth = 3;
+            // เปลี่ยนสีคลื่นตามสถานะ
+            if (isRecording) {
+                canvasCtx.strokeStyle = '#e94560'; // สีแดงตอนอัด
+            } else {
+                canvasCtx.strokeStyle = '#4cd137'; // สีเขียวตอนสแตนด์บาย
+            }
+
+            canvasCtx.beginPath();
+
+            const sliceWidth = canvas.width * 1.0 / bufferLength;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * canvas.height / 2;
+
+                if (i === 0) {
+                    canvasCtx.moveTo(x, y);
+                } else {
+                    canvasCtx.lineTo(x, y);
+                }
+                x += sliceWidth;
+            }
+
+            canvasCtx.lineTo(canvas.width, canvas.height / 2);
+            canvasCtx.stroke();
+        }
+    </script>
+</body>
+</html>
